@@ -4,13 +4,14 @@ import joblib
 import argparse
 from mlinsights.mlmodel import PiecewiseRegressor
 from sklearn.preprocessing import KBinsDiscretizer
-
-import mkv, arduino, ttl, sync, plotting, basler, avi
+#no need for mkv,basler in top-down config
+import arduino, ttl, sync, plotting, avi
 
 import pdb
 
 
 def main_function(base_path,
+<<<<<<< HEAD
     output_dir_name,
     first_source,
     second_source,
@@ -22,6 +23,19 @@ def main_function(base_path,
     overwrite_models=False,
     overwrite_extraction=False,
     leds_to_use=[1,2,3,4]):
+=======
+output_dir_name,
+first_source,
+second_source,
+led_loc=None, 
+led_blink_interval=5, 
+arduino_spec=None, 
+s1_led_rois_from_file=False,
+s2_led_rois_from_file=False, 
+overwrite_models=True,
+overwrite_extraction=True,
+leds_to_use=[1,2,3,4]):
+>>>>>>> top-down/top-down
     """
     Uses 4-bit code sequences to create a piecewise linear model to predict first_source times from second_source times
     ----
@@ -106,7 +120,7 @@ def main_function(base_path,
         raise RuntimeError(f'First source keyword {first_source} not recognized')
 
 
-    print('Dealing with second souce...')
+    print('Dealing with second source...')
     # Deal with second source
     if second_source == 'ttl':
         second_source_led_codes = ttl.ttl_workflow(base_path, save_path, num_leds, led_blink_interval, ephys_fs, leds_to_use)
@@ -117,8 +131,8 @@ def main_function(base_path,
         second_source_led_codes, ino_average_fs = arduino.arduino_workflow(base_path, save_path, num_leds, leds_to_use, led_blink_interval, arduino_spec)
     elif second_source == 'basler':
         second_source_led_codes = basler.basler_workflow(base_path, save_path, num_leds, led_blink_interval, basler_chunk_size, s2_led_rois_from_file, overwrite_models)
-    elif first_source == 'avi':
-        second_source_led_codes = avi.avi_workflow(base_path, save_path, num_leds=num_leds, led_blink_interval=led_blink_interval, led_loc=led_loc, avi_chunk_size=avi_chunk_size, overwrite_models=overwrite_models)
+    elif second_source == 'avi':
+        second_source_led_codes = avi.avi_workflow(base_path, save_path, num_leds=num_leds, led_blink_interval=led_blink_interval, led_loc=led_loc, avi_chunk_size=avi_chunk_size, overwrite_extraction=overwrite_extraction)
     else:
         raise RuntimeError(f'Second source keyword {second_source} not recognized')
 
@@ -146,7 +160,14 @@ def main_function(base_path,
 
     #pdb.set_trace()
 
+
+    ## convert the ephys TTL events to bit codes:
+    #ephys_events = np.vstack([ephys_timestamps[abs(channels)<=5],abs(channels[abs(channels)<=5])-1,np.sign(channels[abs(channels)<=5]) ]).T
+    #ephys_codes, ephys_latencies = events_to_codes(ephys_events,nchannels=4,minCodeTime=(led_interval-1)*ephys_fs)
+    #ephys_codes = np.asarray(ephys_codes)
+
     assert len(matches) > 0, 'No matches found -- if using a movie, double check LED extractions and correct assignment of LED order'
+
 
     ## Plot the matched codes against each other:
     plotting.plot_matched_scatter(matches, save_path,first_source,second_source)
@@ -158,6 +179,8 @@ def main_function(base_path,
     #### Make the models! ####
     print('Modeling the two sources from each other...')
 
+    ####################### Make the models! ####################
+ 
     # Rename for clarity.
     ground_truth_source1_event_times = matches[:,0]
     ground_truth_source2_event_times = matches[:,1]
@@ -201,6 +224,7 @@ def main_function(base_path,
         # Save
         joblib.dump(mdl, f'{save_path}/{outname}.p')
         print(f'Saved model that predicts {n1} from {n2}')
+
 
 
     print('Syncing complete. FIN')
