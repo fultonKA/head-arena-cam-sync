@@ -11,7 +11,6 @@ import pdb
 
 
 def main_function(base_path,
-<<<<<<< HEAD
     output_dir_name,
     first_source,
     second_source,
@@ -23,19 +22,7 @@ def main_function(base_path,
     overwrite_models=False,
     overwrite_extraction=False,
     leds_to_use=[1,2,3,4]):
-=======
-output_dir_name,
-first_source,
-second_source,
-led_loc=None, 
-led_blink_interval=5, 
-arduino_spec=None, 
-s1_led_rois_from_file=False,
-s2_led_rois_from_file=False, 
-overwrite_models=True,
-overwrite_extraction=True,
-leds_to_use=[1,2,3,4]):
->>>>>>> top-down/top-down
+
     """
     Uses 4-bit code sequences to create a piecewise linear model to predict first_source times from second_source times
     ----
