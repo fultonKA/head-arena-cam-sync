@@ -8,7 +8,7 @@ plt.rcParams['pdf.fonttype'] = 'truetype'
 import numpy as np
 
 
-def plot_code_chunk(first_source_led_codes, first_source, second_source_led_codes, second_source, save_path, fname='match_check' ):
+def plot_code_chunk(first_source_led_codes, first_source, second_source_led_codes, second_source, save_path):
     """
     Visualize a small chunk of the bit codes. do you see a match? 
     ---
@@ -35,13 +35,13 @@ def plot_code_chunk(first_source_led_codes, first_source, second_source_led_code
     plt.ylabel('bit code')
     plt.legend()
 
-    f.savefig(f'{save_path}/{fname}_{first_source}_{second_source}.png')
+    f.savefig(f'{save_path}/match_check_{first_source}_and_{second_source}.png')
 
     plt.close(f)
 
 
 ## plot the matched codes against each other:
-def plot_matched_scatter(matches,save_path,first_source,second_source):
+def plot_matched_scatter(matches, first_source, second_source, save_path):
 
     f = plt.figure(dpi=600)
 
@@ -51,10 +51,10 @@ def plot_matched_scatter(matches,save_path,first_source,second_source):
 
     plt.title('Found %d matches' % len(matches))
 
-    plt.xlabel('time of ephys codes')
-    plt.ylabel('time of video codes')
+    plt.xlabel(f'time of {first_source} codes')
+    plt.ylabel(f'time of {second_source} codes')
 
-    f.savefig(f'{save_path}/matched_codes_scatter_{first_source}_{second_source}.png')
+    f.savefig(f'{save_path}/matched_codes_scatter_{first_source}_and_{second_source}.png')
 
     plt.close(f)
 
@@ -79,7 +79,7 @@ def plot_matched_times(all_predicted_times, t2_codes, t1_codes, n1, n2, save_pat
     plt.plot(all_predicted_times[start:stop] , t2_codes[start:stop,1],lw=2,label=f'Predicting {n1} from {n2}')
 
     # plot t1 codes on t1 timebase
-    plt.plot(t1_codes[start:stop,0], t1_codes[start:stop,1],alpha=0.5,lw=1,label='Actual {n1}')
+    plt.plot(t1_codes[start:stop,0], t1_codes[start:stop,1],alpha=0.5,lw=1,label=f'Actual {n1}')
 
     plt.xlabel('Time (sec)')
     plt.ylabel('Bit Code')
