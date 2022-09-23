@@ -8,8 +8,10 @@ import pdb
 import moseq2_ephys_sync.sync as sync
 import moseq2_ephys_sync.util as util
 
+#todo: timestamp for arena cam needs 1e6 division to get to ms
 
-def basler_bonsai_workflow(base_path, save_path, num_leds, leds_to_use, led_blink_interval, bonsai_spec='header', timestamp_jump_skip_event_threshhold=1):
+
+def basler_bonsai_workflow(base_path, save_path, num_leds, leds_to_use, led_blink_interval, bonsai_spec, timestamp_jump_skip_event_threshhold=1):
     """
     Workflow to get codes from bonsai outputted txt file. 
 
@@ -31,7 +33,18 @@ def basler_bonsai_workflow(base_path, save_path, num_leds, leds_to_use, led_blin
     assert num_leds == len(leds_to_use)
     txt_colnames, txt_dtypes = get_col_info(bonsai_spec)
     txt_data = load_txt_data(base_path, txt_colnames, txt_dtypes, file_glob='*.csv')
-    bonsai_timestamps = txt_data.time / 1e9  # these are in MICROseconds, convert to seconds
+    
+    if bonsai_spec == 'arena-cam':
+        bonsai_timestamps = txt_data.time / 1e9  # these are in MICROseconds, convert to seconds
+    elif bonsai_spec == 'head-cam':
+        bonsai_timestamps = txt_data.time / 1e3  # these are in MILLIseconds, convert to seconds
+    elif bonsai_spec == 'default':
+        bonsai_timestamps = txt_data.time / 1e9  # these are in MICROseconds, convert to seconds
+    elif bonsai_spec == 'header':
+        bonsai_timestamps = txt_data.time / 1e9  # these are in MICROseconds, convert to seconds
+    else:
+        raise ValueError('Did not recognize requested bonsai txt file spec')
+
 
     led_names = ['led1', 'led2', 'led3', 'led4']
     led_list = []
@@ -57,6 +70,14 @@ def get_col_info(spec):
         colnames = ['time', 'led1', 'led2', 'led3', 'led4', 'yaw', 'roll', 'pitch', 'accx', 'accy', 'accz', 'therm', 'olfled']
         dtypes = ['int64', 'int64', 'int64', 'int64','int64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'int32', 'uint8']
     
+    elif spec == 'arena-cam':
+        colnames = ['time','image','x','y','heading','majorAxis','minorAxis','area','led1','led2', 'led3', 'led4']
+        dtypes = ['int64', 'int64','float64', 'float64', 'float64', 'float64','float64', 'float64','int64', 'int64', 'int64','int64']
+
+    elif spec == 'head-cam':
+        colnames = ['time','x','y','majorAxis','minorAxis','area','orientation','led1','led2', 'led3', 'led4']
+        dtypes = ['int64', 'float64', 'float64', 'float64','float64', 'float64','float64','int64', 'int64', 'int64','int64']
+
     elif spec == 'header':  # headers in txt files
         colnames = None
         dtypes = None
@@ -67,10 +88,11 @@ def get_col_info(spec):
     return colnames, dtypes
 
 
-def load_txt_data(base_path, colnames, dtypes, file_glob='*.txt'):
+def load_txt_data(base_path, colnames, dtypes, file_glob='*.csv'):
 
     # Define header data types
     # Do not use unsigned integers!! Otherwise np.diff() will not be able to return negatives.
+    # kaf changed .txt to .csv here
     header_val_dtypes = {
         'time': 'int64',
         'img_num': 'int64',
