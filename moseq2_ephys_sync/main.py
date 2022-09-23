@@ -5,25 +5,26 @@ import argparse
 from mlinsights.mlmodel import PiecewiseRegressor
 from sklearn.preprocessing import KBinsDiscretizer
 
-import mkv, arduino, ttl, sync, plotting, basler, avi, basler_bonsai
+import arduino, ttl, sync, plotting, basler_bonsai#, basler, avi, mkv
 
 import pdb
 
 
 def process_source(source,
-                    base_path=None,
-                    save_path=None,
-                    num_leds=None,
-                    leds_to_use=None,
-                    led_blink_interval=None, 
-                    ephys_fs=None,
-                    mkv_chunk_size=None,
-                    basler_chunk_size=None,
-                    avi_chunk_size=None,
-                    led_loc=None,
-                    led_rois_from_file=None,
-                    overwrite_extraction=False,
-                    arduino_spec=None
+                    base_path,
+                    save_path,
+                    num_leds,
+                    leds_to_use,
+                    led_blink_interval, 
+                    ephys_fs,
+                    mkv_chunk_size,
+                    basler_chunk_size,
+                    avi_chunk_size,
+                    led_loc,
+                    led_rois_from_file,
+                    overwrite_extraction,
+                    arduino_spec,
+                    bonsai_spec
                     ):
 
     if source == 'ttl':
@@ -43,7 +44,7 @@ def process_source(source,
 
     elif source == 'basler_bonsai':
         # TODO: add in possibility in main code of passing in both arduino spec and bonsai spec (although ideally they just have headers...)
-        source_led_codes, source_full_timestamps = basler_bonsai.basler_bonsai_workflow(base_path, save_path, num_leds, leds_to_use, led_blink_interval)
+        source_led_codes, source_full_timestamps = basler_bonsai.basler_bonsai_workflow(base_path, save_path, num_leds, leds_to_use, led_blink_interval,bonsai_spec)
 
     elif source == 'avi':
         assert '4' in leds_to_use, "LED extraction code expects that last LED is LED 4 (switching every interval)" 
@@ -55,19 +56,20 @@ def process_source(source,
     return source_led_codes, source_full_timestamps
 
 
-def main_function(base_path,
-output_dir_name,
-first_source,
-second_source,
-led_loc=None, 
-led_blink_interval=5, 
-arduino_spec=None, 
-s1_led_rois_from_file=False,
-s2_led_rois_from_file=False, 
-overwrite_models=False,
-overwrite_extraction=False,
-leds_to_use=[1,2,3,4],
-sources_to_predict=None):
+def main_function(base_path='D:/data/headcam/SS-PUP-001/pup_001_2022_09011034',
+    output_dir_name='D:/data/headcam/SS-PUP-001/pup_001_2022_09011034/output3',
+    first_source='arduino',
+    second_source='basler_bonsai',
+    led_loc=None, 
+    led_blink_interval=1, 
+    arduino_spec='tdt_headcam', 
+    bonsai_spec='head-cam',
+    s1_led_rois_from_file=False,
+    s2_led_rois_from_file=False, 
+    overwrite_models=False,
+    overwrite_extraction=False,
+    leds_to_use=[1,2,3,4],
+    sources_to_predict='basler_bonsai'):
 
     """
     Uses 4-bit code sequences to create a piecewise linear model to predict first_source times from second_source times
@@ -75,7 +77,7 @@ sources_to_predict=None):
     Inputs:
         base_path (str): path to the .mkv and any other files needed
         output_dir: path to save output models and plots. Default: {base_path}/sync.
-        first_source (str): 'ttl', 'mkv', 'arduino', or 'basler'. Source to be predicted.
+        first_source (str): 'ttl', 'mkv', 'arduino', 'basler', or 'basler_bonsai'. Source to be predicted.
             ttl: looks for open ephys data in __ format
             mkv: looks for an MKV file recorded with the k4a recorder
             arduino: looks for a text file with cols specified by arduino_col_type
@@ -113,23 +115,27 @@ sources_to_predict=None):
     num_leds = len(leds_to_use)
 
     # Set up save path
-    save_path = f'{base_path}/{output_dir_name}/'
+    #save_path = f'{base_path}/{output_dir_name}/'
+    save_path = output_dir_name
     if not os.path.exists(save_path):
         os.makedirs(save_path)
 
     # Check if models already exist, only over-write if requested
     model_exists_bool = os.path.exists(f'{save_path}/{first_source}_from_{second_source}.p') or \
                         os.path.exists(f'{save_path}/{second_source}_from_{first_source}.p')
+    #model_exists_bool = os.path.exists(f'{save_path}/{first_source}_from_{second_source}.p') or \
+    #                    os.path.exists(f'{save_path}/{second_source}_from_{first_source}.p')
 
     if model_exists_bool and not overwrite_models:
         raise RuntimeError("One or both models already exist and overwrite_models is false!")
 
 
-    print('Dealing with first souce...')
+    print('Dealing with first source...')
+    print(f'source1 = {first_source}')
     # first_source_led_codes: array of reconstructed pixel clock codes where: codes[:,0] = time, codes[:,1] = code (and codes[:,2] = trigger channel but that's not used in this code)
     # first_source_full_timestamps: full list of timestamps from source 1 (every timestamp, not just event times! For prediction with the model at the end.)
     first_source_led_codes, first_source_full_timestamps = \
-    process_source(first_source,
+    process_source(source=first_source,
                     base_path=base_path,
                     save_path=save_path, num_leds=num_leds,
                     leds_to_use=leds_to_use,
@@ -141,12 +147,13 @@ sources_to_predict=None):
                     led_loc=led_loc,
                     led_rois_from_file=s1_led_rois_from_file,
                     overwrite_extraction=overwrite_extraction,
-                    arduino_spec=arduino_spec
+                    arduino_spec=arduino_spec,
+                    bonsai_spec=bonsai_spec
                     )
 
-    print('Dealing with second souce...')
+    print('Dealing with second source...')
     second_source_led_codes, second_source_full_timestamps = \
-    process_source(second_source,
+    process_source(source=second_source,
                     base_path=base_path,
                     save_path=save_path, num_leds=num_leds,
                     leds_to_use=leds_to_use,
@@ -158,7 +165,8 @@ sources_to_predict=None):
                     led_loc=led_loc,
                     led_rois_from_file=s2_led_rois_from_file,
                     overwrite_extraction=overwrite_extraction,
-                    arduino_spec=arduino_spec
+                    arduino_spec=arduino_spec,
+                    bonsai_spec=bonsai_spec
                     )
    
 
@@ -172,6 +180,7 @@ sources_to_predict=None):
     
     # Save the codes for use later
     np.savez(f'{save_path}/codes_{first_source}_and_{second_source}.npz', first_source_codes=first_source_led_codes, second_source_codes=second_source_led_codes)
+    #np.savez(f'{save_path}/codes_{first_source}_and_{second_source}.npz', first_source_codes=first_source_led_codes, second_source_codes=second_source_led_codes)
 
 
     # Visualize a small chunk of the bit codes. do you see a match? 
@@ -275,6 +284,7 @@ if __name__ == "__main__" :
     parser.add_argument('--led_loc', type=str, help="Location of the syncing LEDs in the video, as seen from plt.imshow()'s point of view. Currenly supported: quadrants (topright, topleft, bottomright, bottomleft), some vertical strips (rightquarter, leftquarter), some horizontal strips (topquarter, topthird, bottomquarter). Add more in extract_leds.py.")
     parser.add_argument('--led_blink_interval', type=int, default=5)  # default blink every 5 seconds
     parser.add_argument('--arduino_spec', type=str, help="Currently supported: fictive_olfaction, odor_on_wheel, basic_thermistor")  # specifiy cols in arduino text file
+    parser.add_argument('--bonsai_spec', type=str, help="Currently supported: default, arena-cam, head-cam, header")  # specifiy cols in basler_bonsai csv file
     parser.add_argument('--s1_led_rois_from_file', action="store_true", help="Flag to look for lists of points for source 1 led rois")  # need to run separate jup notbook first to get this
     parser.add_argument('--s2_led_rois_from_file', action="store_true", help="Flag to look for lists of points for source 2 led rois")  # need to run separate jup notbook first to get this
     parser.add_argument('--overwrite_models', action="store_true")  # overwrites old models if True (1)
@@ -291,6 +301,7 @@ if __name__ == "__main__" :
                 led_loc=settings.led_loc,
                 led_blink_interval=settings.led_blink_interval,
                 arduino_spec=settings.arduino_spec,
+                bonsai_spec=settings.bonsai_spec,
                 s1_led_rois_from_file=settings.s1_led_rois_from_file,
                 s2_led_rois_from_file=settings.s2_led_rois_from_file,
                 overwrite_models=settings.overwrite_models,

@@ -63,6 +63,9 @@ def get_col_info(spec):
     elif spec == "odor_on_wheel":
         arduino_colnames = ['time', 'led1', 'led2', 'led3', 'led4', 'wheel','thermistor','odor_ttl']
         arduino_dtypes = ['int64', 'int64', 'int64', 'int64','int64', 'int64','int64','int64']
+    elif spec == "tdt_headcam":
+        arduino_colnames = ['time','led1','led2','led3','led4','tdt','yaw','roll','pitch','acc_x','acc_y','acc_z','therm','dac']
+        arduino_dtypes = ['int64', 'int64', 'int64', 'int64','int64','int64','float64', 'float64', 'float64', 'float64','float64', 'float64','int32','float64']
     return arduino_colnames, arduino_dtypes
 
 
@@ -99,6 +102,7 @@ def load_arduino_data(base_path, colnames, dtypes, file_glob='*.txt'):
         'odor': 'int8', # same as odor_ttl
         'wheel': 'int64',
         'dac_value': 'float64',
+        'tdt': 'int8',
         'dac': 'float64'    
     }
 

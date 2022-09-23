@@ -2,7 +2,7 @@ mlinsights
 jupyter
 seaborn
 pandas
-joblib==0.15.1
+joblib==1.0.0
 scipy
 ipython
 numpy
